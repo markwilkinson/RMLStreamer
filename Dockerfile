@@ -18,6 +18,8 @@ COPY Server/10-cgi.conf /etc/lighttpd/conf-enabled/
 COPY target/RMLStreamer-*.jar /opt/app/RMLStreamer.jar
 #ENTRYPOINT ["java", "-jar", "/opt/app/RMLStreamer.jar"]
 #ENTRYPOINT ["perl", "-v"]
+COPY Server/graph_creation /var/www/html/
+
 RUN pwd
 RUN find . -name lighttpd
 #ENTRYPOINT ["/usr/sbin/lighttpd" "-D" "-f" "/etc/lighttpd/lighttpd.conf"]

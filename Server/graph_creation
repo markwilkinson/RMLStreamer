@@ -1,0 +1,16 @@
+#!perl -w
+$mypath = $ENV{'PATH_INFO'};
+
+$mypath =~ /([^\.]+)\./;
+$mytype = $1;
+
+
+
+use IPC::Open2;
+
+my $pid = open2(my $chld_out, my $chld_in, "java -jar /opt/app/RMLStreamer.jar toFile -m /config/${mytype}_rml.ttl -o /data/triples/${mytype}.ttl");
+
+#waitpid $pid, 0
+
+print "Content-type: text/plain\n\nDone";
+
