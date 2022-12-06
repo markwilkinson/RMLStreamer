@@ -8,6 +8,7 @@ RUN apt-get -y dist-upgrade -q
 RUN apt-get -y update -q
 RUN apt-get install -y --no-install-recommends build-essential lighttpd 
 RUN service lighttpd stop
+RUN cpan install IPC::Open2 << yes
 
 COPY entrypoint.sh /usr/bin/entrypoint.sh
 
@@ -20,7 +21,7 @@ COPY target/RMLStreamer-*.jar /opt/app/RMLStreamer.jar
 #ENTRYPOINT ["perl", "-v"]
 COPY Server/graph_creation /var/www/html/
 
-RUN pwd
-RUN find . -name lighttpd
+#RUN pwd
+#RUN find . -name lighttpd
 #ENTRYPOINT ["/usr/sbin/lighttpd" "-D" "-f" "/etc/lighttpd/lighttpd.conf"]
 ENTRYPOINT ["/usr/bin/entrypoint.sh"]

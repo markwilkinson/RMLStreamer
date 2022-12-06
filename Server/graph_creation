@@ -1,16 +1,33 @@
 #!perl -w
-$mypath = $ENV{'PATH_INFO'};
-
-$mypath =~ /([^\.]+)\./;
-$mytype = $1;
-
-
-
 use IPC::Open2;
 
-my $pid = open2(my $chld_out, my $chld_in, "java -jar /opt/app/RMLStreamer.jar toFile -m /config/${mytype}_rml.ttl -o /data/triples/${mytype}.ttl");
+`touch /tmp/started`;
 
-#waitpid $pid, 0
+$mypath = $ENV{PATH_INFO};
 
-print "Content-type: text/plain\n\nDone";
+if ($mypath =~ /\/?([^\.]+)\./) {
+  $mytype = $1
+}
+
+
+if ($mytype) {
+
+`touch /tmp/forkking`;
+
+  if (-e "/config/$mytype\_rml.ttl") {
+  #	$pid = open2(my $chld_out, my $chld_in, "java -jar /opt/app/RMLStreamer.jar toFile -m ./config/$mytype\_rml.ttl -o ./data/triples/$mytype");
+    $pid = open2(my $chld_out, my $chld_in, "/opt/java/openjdk/bin/java -jar /opt/app/RMLStreamer.jar toFile -m /config/$mytype\_rml.ttl -o /data/triples/$mytype");
+  }
+`touch /tmp/$pid`;
+
+  waitpid $pid, 0;
+
+  $pid = open2($chld_out,$chld_in, "cat /data/triples/$mytype/* > /data/triples/$mytype.ttl");
+  $pid = open2($chld_out,$chld_in, "rm -rf /data/triples/$mytype");
+};
+
+`touch /tmp/finished`;
+
+$pid = open2($chld_out,$chld_in, "cat /data/triples/$mytype/* > /data/triples/$mytype.ttl");
+$pid = open2($chld_out,$chld_in, "rm -rf /data/triples/$mytype");
 
