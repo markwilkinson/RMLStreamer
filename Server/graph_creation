@@ -2,32 +2,57 @@
 use IPC::Open2;
 
 `touch /tmp/started`;
-
+`chmod a+wrx /data/triples`;
 $mypath = $ENV{PATH_INFO};
-
-if ($mypath =~ /\/?([^\.]+)\./) {
-  $mytype = $1
+print STDERR "Beginning RDFization with $mypath\n";
+if ($mypath =~ /.*\/([\w]+)\.ini/) {
+  $mytype = $1;
+  print STDERR "Found $mytype\n";
 }
 
 
 if ($mytype) {
+  `touch /tmp/forkking$mytype`;
+  print STDERR "Now forking the streamer\n";
+  $c = 0;
 
-`touch /tmp/forkking`;
-
-  if (-e "/config/$mytype\_rml.ttl") {
-  #	$pid = open2(my $chld_out, my $chld_in, "java -jar /opt/app/RMLStreamer.jar toFile -m ./config/$mytype\_rml.ttl -o ./data/triples/$mytype");
-    $pid = open2(my $chld_out, my $chld_in, "/opt/java/openjdk/bin/java -jar /opt/app/RMLStreamer.jar toFile -m /config/$mytype\_rml.ttl -o /data/triples/$mytype");
+  if (!(-e "/data/$mytype\_rml.ttl")) {
+    $c = $c + 1;
+    if ($c > 3){
+      print STDERR "RML file never appeared!  Aborting\n";
+      print "Content-type: text/plain\n\nRML file not found.  Aborting.";
+      exit
+    }
+    sleep 2;
   }
-`touch /tmp/$pid`;
 
-  waitpid $pid, 0;
+  if (-e "/data/$mytype\_rml.ttl") {
+    `touch /tmp/foundRML`;
+    print STDERR "Now forking the streamer\n";
+  #	$pid = open2(my $chld_out, my $chld_in, "java -jar /opt/app/RMLStreamer.jar toFile -m ./config/$mytype\_rml.ttl -o ./data/triples/$mytype");
+  # $pid = open2(my $chld_out, my $chld_in, "/opt/java/openjdk/bin/java -jar /opt/app/RMLStreamer.jar toFile -m /data/$mytype\_rml.ttl -o /data/triples/$mytype");
+    $pid = open2(my $chld_out, my $chld_in, "/opt/java/openjdk/bin/java -jar /opt/app/RMLStreamer.jar toFile -m /data/$mytype\_rml.ttl -o /tmp/$mytype");  # /tmp due to permissions problems
+    `touch /tmp/opened$pid`;
+  }
+  if ($pid) {
+    print STDERR "Waiting for the streamer to finish\n";
 
-  $pid = open2($chld_out,$chld_in, "cat /data/triples/$mytype/* > /data/triples/$mytype.ttl");
-  $pid = open2($chld_out,$chld_in, "rm -rf /data/triples/$mytype");
+    waitpid $pid, 0;
+  }
+
+  if (-e "/tmp/$mytype"){
+    print STDERR "Consolidating the data\n";
+    `cat /tmp/$mytype/* > /data/triples/$mytype.nt`;
+    sleep 5;
+    `rm -rf /tmp/$mytype`;
+  }
 };
 
 `touch /tmp/finished`;
+#`chmod a-w /data/triples`;
+#`chmod ug+w /data/triples`;
 
-$pid = open2($chld_out,$chld_in, "cat /data/triples/$mytype/* > /data/triples/$mytype.ttl");
-$pid = open2($chld_out,$chld_in, "rm -rf /data/triples/$mytype");
+print STDERR "RDFizing complete!\n";
+
+print "Content-type: text/plain\n\nFinished RDFizing";
 
