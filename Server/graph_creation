@@ -42,10 +42,17 @@ if ($mytype) {
 
   if (-e "/tmp/$mytype"){
     print STDERR "Consolidating the data\n";
-    `cat /tmp/$mytype/* > /data/triples/$mytype.nt`;
-    sleep 5;
-    `rm -rf /tmp/$mytype`;
+    `echo "Consolidating /tmp/$mytype\n" >> /tmp/log`;
+    `cat /tmp/$mytype/* >> /tmp/log`;
+    $pidcat = open2(my $o, my $i, "cat /tmp/$mytype/* > /data/triples/$mytype.nt");
+    `touch /tmp/cat$pidcat`;
   }
+  if ($pidcat) {
+    print STDERR "Waiting for the cat to finish\n";
+    `echo "Waiting for the cat to finish\n" >> /tmp/log`;
+    waitpid $pidcat, 0;
+  }
+  `rm -rf /tmp/$mytype`;
 };
 
 `touch /tmp/finished`;
